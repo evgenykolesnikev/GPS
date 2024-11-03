@@ -1,0 +1,43 @@
+body {
+  font-family: "Courier New", Courier, monospace;
+}
+
+#plot {
+  width: 800px; 
+  height: 600px; 
+  margin: 50px auto 0 auto;
+}
+
+.box {
+  overflow: hidden;
+}
+
+#GPSConfigForm {
+  margin: 20px auto 0 auto;
+  padding: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  width: 600px;
+}
+
+#GPSConfigForm button {
+  padding: 10px;
+  margin-left: auto;
+}
+
+.inputsBox {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+}
+
+.inputContainer {
+  width: 250px;
+}
+
+.inputContainer > * {
+  display: block;
+  margin-bottom: 10px;
+}

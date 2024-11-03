@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en/ua">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPS</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+
+  <div id="plot" class="box"></div>
+
+  <form id="GPSConfigForm" class="box">
+    <div class="inputsBox">
+      <div class="inputContainer" data-config="GPSService">
+        <label for="emulationZoneSizeWidth">Ширина зони емуляції (кілометри):</label>
+        <input type="text" id="emulationZoneSizeWidth" name="emulationZoneSize.width" />
+      </div>
+
+      <div class="inputContainer" data-config="GPSService">
+        <label for="emulationZoneSizeHeight">Висота зони емуляції (кілометри):</label>
+        <input type="text" id="emulationZoneSizeHeight" name="emulationZoneSize.height" />
+      </div>
+
+      <div class="inputContainer" data-config="GPSService">
+        <label for="messageFrequency">Частота передачі повідомлень (повідомлення/с):</label>
+        <input type="text" id="messageFrequency" name="messageFrequency" />
+      </div>
+
+      <div class="inputContainer" data-config="GPSService">
+        <label for="satelliteSpeed">Швидкість супутників (км/год):</label>
+        <input type="text" id="satelliteSpeed" name="satelliteSpeed" />
+      </div>
+
+      <div class="inputContainer" data-config="GPSService">
+        <label for="objectSpeed">Швидкість об'єкта (км/год):</label>
+        <input type="text" id="objectSpeed" name="objectSpeed" />
+      </div>
+
+      <div class="inputContainer" data-config="GPSStorage">
+        <label for="storageTime">Час зберігання в GPSStorage (мілісекунди):</label>
+        <input type="text" id="storageTime" name="storageTime" />
+      </div>
+    </div>
+
+    <button type="submit">Надіслати</button>
+  </form>
+
+  <div id="dataStorage" class="box">
+    <label for="satelliteData">Дані про супутники та об'єкт:</label>
+    <textarea id="satelliteData" rows="10" cols="50" placeholder="Трейси будуть відображені тут..."></textarea>
+    <button id="saveDataButton">Зберегти дані</button>
+  </div>
+  
+
+  <script type="module">
+   
+    import { GPSService } from "/src/GPSService.js";
+    import { GPSGraph } from "/src/GPSGraph.js";
+    import { GPSConfig } from "/src/GPSConfig.js";
+    import { GPSStorage } from "/src/GPSStorage.js";
+
+    let GPSServiceProps = {
+      configUrl: "http://localhost:3000/api/config",
+      socketUrl: "ws://localhost:4001",
+      eventName: "gpsDataReceived",
+    };
+
+    const gpsService = new GPSService(GPSServiceProps);
+    const gpsGraph = new GPSGraph("plot");
+    const gpsStorage = new GPSStorage();
+
+    async function main() {
+      await gpsService.fetchConfiguration();
+
+      gpsService.connectWebSocket();
+
+      const formElement = document.getElementById("GPSConfigForm");
+
+      const gpsConfig = new GPSConfig(formElement, function (config) {
+        gpsService.updateConfiguration(config.GPSService).then(()=>{
+          gpsGraph.updateConfiguration(config);
+          gpsStorage.updateConfiguration(config);
+        });
+      });
+
+      let config = {};
+      config["GPSService"] = gpsService.config;
+      config["GPSStorage"] = gpsStorage.config;
+
+      gpsConfig.setConfig(config);
+
+      window.addEventListener("gpsDataReceived", (event) => {
+        const gpsData = event.detail;
+        gpsStorage.addSateliteData(gpsData);
+      });
+
+      gpsGraph.updateConfiguration(config);
+      gpsStorage.updateConfiguration(config);
+
+      gpsGraph.init(gpsStorage);
+    }
+
+    $(document).ready(function () {
+      main();
+
+      $('#saveDataButton').on('click', function () {
+        document.getElementById("satelliteData").value = gpsGraph.getCurrentData(); 
+    });
+
+    });
+
+  </script>
+</body>
+</html>
